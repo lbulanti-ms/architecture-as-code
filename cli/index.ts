@@ -1,6 +1,8 @@
 #! /usr/bin/env node
 
 import { program } from 'commander';
+import validateSchemaInstantiationAgainstJsonSchema from './validation/schema-validation.js'
+
 
 program
     .version('0.1.0')
@@ -10,5 +12,13 @@ program
     .command('placeholder <input>')
     .description('This is just a placeholder. Replace with an actual command.')
     .action((input) => { console.log(input); });
+
+program
+.command("validate")
+.requiredOption("-p, --pattern <pattern>", "The location of the JSON Schema Pattern")
+.requiredOption("-i, --instantiation <instantiation>", "The location of the instantiation of the Pattern")
+.action((options)=> {
+    console.log(validateSchemaInstantiationAgainstJsonSchema(options.instantiation, options.pattern));
+})
 
 program.parse(process.argv);
