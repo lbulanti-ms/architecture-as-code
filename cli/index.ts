@@ -1,7 +1,7 @@
 #! /usr/bin/env node
 
 import { program } from 'commander';
-import validateSchemaInstantiationAgainstJsonSchema from './validation/schema-validation.js'
+import validateSchema from './validation/schema-validation.js'
 
 
 program
@@ -17,8 +17,8 @@ program
 .command("validate")
 .requiredOption("-p, --pattern <pattern>", "The location of the JSON Schema Pattern")
 .requiredOption("-i, --instantiation <instantiation>", "The location of the instantiation of the Pattern")
-.action((options)=> {
-    console.log(validateSchemaInstantiationAgainstJsonSchema(options.instantiation, options.pattern));
+.action(async (options)=> {
+    await validateSchema(options.instantiation, options.pattern);
 })
 
 program.parse(process.argv);
