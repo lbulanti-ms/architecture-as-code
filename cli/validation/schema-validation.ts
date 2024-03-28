@@ -79,5 +79,6 @@ async function loadSchema(uri) {
         return body;
     } catch (error) {
         console.error(`Error occured while trying to load the schema at ${uri}. Error : ${error.message}`);
+        process.exit(1);
     }
 }
