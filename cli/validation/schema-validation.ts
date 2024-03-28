@@ -5,7 +5,7 @@ const { Spectral } = pkg;
 import {getRuleset} from '@stoplight/spectral-cli/dist/services/linter/utils/getRuleset.js'
 
 
-export default async function validateSchema(jsonSchemaInstantiationPath: string, jsonSchemaPath: string) {
+export default async function validate(jsonSchemaInstantiationPath: string, jsonSchemaPath: string) {
     // load schema method is needed to resolve URIs
     const ajv = (new Ajv2020({ strict: false, loadSchema: loadSchema }));
     
@@ -22,12 +22,12 @@ export default async function validateSchema(jsonSchemaInstantiationPath: string
         console.log("Problems: ")
         console.log(validate.errors);
     }
-    
+
     await runSpectralValidations(jsonSchemaInstantiation);
 }
 
 async function getFileFromUrlOrPath(input: string) {
-    const urlPattern = new RegExp('^https?://'); 
+    const urlPattern = new RegExp('^https?://');
     if(urlPattern.test(input)){
         return await getFileFromUrl(input);
     } else {
