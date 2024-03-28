@@ -9,21 +9,25 @@ export default async function validate(jsonSchemaInstantiationPath: string, json
     // load schema method is needed to resolve URIs
     const ajv = (new Ajv2020({ strict: false, loadSchema: loadSchema }));
     
-    
     const jsonSchemaInstantiation =await getFileFromUrlOrPath(jsonSchemaInstantiationPath);
     const jsonSchema = await getFileFromUrlOrPath(jsonSchemaPath);
 
-    const validate = await ajv.compileAsync(jsonSchema);
+    try{
+        const validate = await ajv.compileAsync(jsonSchema);
 
-    if (validate(jsonSchemaInstantiation)) {
-        console.log("The schema instantiation matches the json schema");
-    } else {
-        console.log("The schema instantiation does not match the json schema");
-        console.log("Problems: ")
-        console.log(validate.errors);
+        if (validate(jsonSchemaInstantiation)) {
+            console.log("The schema instantiation matches the json schema");
+        } else {
+            console.log("The schema instantiation does not match the json schema");
+            console.log("Problems: ")
+            console.log(validate.errors);
+        }
+
+        await runSpectralValidations(jsonSchemaInstantiation);
+    }catch(error) {
+        console.error(`An error occured during the validation: `, error.message);
+        process.exit(1);
     }
-
-    await runSpectralValidations(jsonSchemaInstantiation);
 }
 
 async function getFileFromUrlOrPath(input: string) {
