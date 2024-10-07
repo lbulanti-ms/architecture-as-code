@@ -19,3 +19,5 @@ website/package-lock.json
 
 node_modules/
 **/dependency-check-report/
+
+**/out/**
