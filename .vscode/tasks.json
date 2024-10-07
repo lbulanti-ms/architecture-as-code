@@ -14,7 +14,10 @@
 			"group": {
 				"kind": "build",
 				"isDefault": true
-			}
+			},
+			"options": {
+    			"cwd": "${workspaceFolder}/vs-code-extensions/calm-validate"
+			},
 		}
 	]
 }

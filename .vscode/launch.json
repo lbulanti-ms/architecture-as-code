@@ -10,10 +10,10 @@
 			"type": "extensionHost",
 			"request": "launch",
 			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}/vs-code-extensions/"
+				"--extensionDevelopmentPath=${workspaceFolder}/vs-code-extensions/calm-validate"
 			],
 			"outFiles": [
-				"${workspaceFolder}/vs-code-extensions/out/**/*.js"
+				"${workspaceFolder}/vs-code-extensions/calm-validate/out/**/*.js"
 			],
 			"preLaunchTask": "${defaultBuildTask}"
 		}
