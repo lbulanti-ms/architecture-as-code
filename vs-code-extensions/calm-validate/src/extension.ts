@@ -1,6 +1,5 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import { stringify } from 'querystring';
 import * as vscode from 'vscode';
 import { languages, Diagnostic, DiagnosticSeverity, Range } from 'vscode';
 
@@ -16,23 +15,25 @@ export function activate(context: vscode.ExtensionContext) {
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
 	const disposable = vscode.commands.registerCommand('calm-validate.calm-validate', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from calm-validate!');
+		const diagnosticCollection = languages.createDiagnosticCollection("calm");
+		vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
+			// The code you place here will be executed every time your command is executed
+			if (document.uri.fsPath.endsWith('.json')) {
+				if (vscode.window.activeTextEditor) {
+					diagnosticCollection.clear();
+					let calmResult = callCalmValidate();
+					let diagnostics: Diagnostic[] = calmResult.map((calmValidation: any) => new Diagnostic(new Range(new vscode.Position(2, 1), new vscode.Position(2, 20)),
+						calmValidation.message, convertSeverity(calmValidation.severity)));
+					diagnosticCollection.set(vscode.window.activeTextEditor.document.uri, diagnostics);
+				}
+			}
 
-		let calmResult = callCalmValidate();
+		});
 
-		let diagnostics: Diagnostic[] = calmResult.map((calmValidation: any) => new Diagnostic(new Range(new vscode.Position(1,1),new vscode.Position(1,1)),
-		calmValidation.message, convertSeverity(calmValidation.severity)));
-
-		let diagnosticCollection = languages.createDiagnosticCollection("calm");
-	
-		if (vscode.window.activeTextEditor) {
-			diagnosticCollection.set(vscode.window.activeTextEditor.document.uri, diagnostics);
-		}
 	});
 
 	context.subscriptions.push(disposable);
+	vscode.commands.executeCommand('calm-validate.calm-validate');
 }
 
 function callCalmValidate() {
@@ -53,7 +54,7 @@ function callCalmValidate() {
 }
 
 function convertSeverity(severityStr: string): DiagnosticSeverity {
-	if(severityStr === "error") {
+	if (severityStr === "error") {
 		return DiagnosticSeverity.Error;
 	} else if (severityStr === "warning") {
 		return DiagnosticSeverity.Warning;
