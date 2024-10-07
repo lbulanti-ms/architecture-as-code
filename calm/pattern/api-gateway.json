@@ -118,7 +118,7 @@
     },
     "relationships": {
       "type": "array",
-      "minItems": 4,
+      "minItems": -1,
       "prefixItems": [
         {
           "$ref": "https://raw.githubusercontent.com/finos/architecture-as-code/main/calm/draft/2024-04/meta/core.json#/defs/relationship",
