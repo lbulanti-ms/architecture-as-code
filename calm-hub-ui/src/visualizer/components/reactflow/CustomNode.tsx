@@ -19,9 +19,11 @@ import {
 import { extractId, extractNodeType } from './utils/calmHelpers.js';
 import { THEME, getNodeTypeColor, getRiskLevelColor } from './theme.js';
 import type { RiskItem, MitigationItem, ControlItem } from '../../contracts/contracts.js';
+import { useDiagramActions } from '../../context/DiagramActionsContext.js';
 
 export function CustomNode({ data }: NodeProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const { onNavigateToDetailedArch } = useDiagramActions();
 
   // Get callbacks from data
   const onShowDetails = data.onShowDetails;
@@ -293,39 +295,74 @@ export function CustomNode({ data }: NodeProps) {
             <div style={{ fontSize: '12px', color: THEME.colors.muted, marginBottom: '4px' }}>Description:</div>
             <div style={{ fontSize: '12px', color: THEME.colors.foreground, lineHeight: 1.5 }}>{description}</div>
           </div>
-          {onShowDetails && (
-            <div style={{ borderTop: `1px solid ${THEME.colors.border}`, paddingTop: '8px', marginTop: '8px' }}>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onShowDetails(data);
-                }}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  padding: '8px 12px',
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  borderRadius: '6px',
-                  background: THEME.colors.accent,
-                  color: '#ffffff',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'opacity 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.opacity = '0.9';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.opacity = '1';
-                }}
-              >
-                <Info style={{ width: '14px', height: '14px' }} />
-                Show Details
-              </button>
+          {(onShowDetails || (detailedArchitecture && onNavigateToDetailedArch)) && (
+            <div style={{ borderTop: `1px solid ${THEME.colors.border}`, paddingTop: '8px', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {onShowDetails && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onShowDetails(data);
+                  }}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '8px 12px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    borderRadius: '6px',
+                    background: THEME.colors.accent,
+                    color: '#ffffff',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'opacity 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.opacity = '0.9';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.opacity = '1';
+                  }}
+                >
+                  <Info style={{ width: '14px', height: '14px' }} />
+                  Show Details
+                </button>
+              )}
+              {detailedArchitecture && detailedArchitecture.startsWith('/calm/') && onNavigateToDetailedArch && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNavigateToDetailedArch(detailedArchitecture);
+                  }}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '8px 12px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    borderRadius: '6px',
+                    background: 'transparent',
+                    color: THEME.colors.accent,
+                    border: `1px solid ${THEME.colors.accent}`,
+                    cursor: 'pointer',
+                    transition: 'opacity 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.opacity = '0.8';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.opacity = '1';
+                  }}
+                >
+                  <ZoomIn style={{ width: '14px', height: '14px' }} />
+                  Explore Architecture
+                </button>
+              )}
             </div>
           )}
         </div>

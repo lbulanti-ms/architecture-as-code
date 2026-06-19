@@ -1,6 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { SectionHeader } from './SectionHeader.js';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import type { BreadcrumbItem } from '../../../model/calm.js';
 
 describe('SectionHeader', () => {
     it('renders icon, namespace, id, and version', () => {
@@ -170,5 +172,117 @@ describe('SectionHeader', () => {
         );
 
         expect(screen.queryByTestId('share-bar')).not.toBeInTheDocument();
+    });
+
+    it('renders a single breadcrumb as a button before the current trail', () => {
+        const crumbs: BreadcrumbItem[] = [
+            { namespace: 'finos', type: 'patterns', id: 'api-gateway-pattern', version: '1.0.0' },
+        ];
+
+        render(
+            <SectionHeader
+                icon={<span>Icon</span>}
+                namespace="finos"
+                id="api-platform"
+                version="1.0.0"
+                breadcrumbs={crumbs}
+            />
+        );
+
+        const heading = screen.getByRole('heading');
+        expect(heading).toHaveTextContent('api-gateway-pattern');
+        expect(heading).toHaveTextContent('api-platform');
+        expect(screen.queryByText('…')).not.toBeInTheDocument();
+    });
+
+    it('renders two breadcrumbs as two buttons with no ellipsis', () => {
+        const crumbs: BreadcrumbItem[] = [
+            { namespace: 'finos', type: 'architectures', id: 'microservices-platform', version: '1.0.0' },
+            { namespace: 'finos', type: 'architectures', id: 'backend-services', version: '1.0.0' },
+        ];
+
+        render(
+            <SectionHeader
+                icon={<span>Icon</span>}
+                namespace="finos"
+                id="order-service"
+                version="1.0.0"
+                breadcrumbs={crumbs}
+            />
+        );
+
+        const heading = screen.getByRole('heading');
+        expect(heading).toHaveTextContent('microservices-platform');
+        expect(heading).toHaveTextContent('backend-services');
+        expect(screen.queryByText('…')).not.toBeInTheDocument();
+    });
+
+    it('collapses middle breadcrumbs into an ellipsis when there are more than two', () => {
+        const crumbs: BreadcrumbItem[] = [
+            { namespace: 'finos', type: 'architectures', id: 'level-1', version: '1.0.0' },
+            { namespace: 'finos', type: 'architectures', id: 'level-2', version: '1.0.0' },
+            { namespace: 'finos', type: 'architectures', id: 'level-3', version: '1.0.0' },
+        ];
+
+        render(
+            <SectionHeader
+                icon={<span>Icon</span>}
+                namespace="finos"
+                id="level-4"
+                version="1.0.0"
+                breadcrumbs={crumbs}
+            />
+        );
+
+        expect(screen.getByRole('button', { name: 'level-1' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'level-3' })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'level-2' })).not.toBeInTheDocument();
+        expect(screen.getByText('…')).toBeInTheDocument();
+    });
+
+    it('calls onBreadcrumbClick with the correct crumb and index when a breadcrumb is clicked', async () => {
+        const user = userEvent.setup();
+        const onBreadcrumbClick = vi.fn();
+        const crumbs: BreadcrumbItem[] = [
+            { namespace: 'finos', type: 'patterns', id: 'api-gateway-pattern', version: '1.0.0' },
+        ];
+
+        render(
+            <SectionHeader
+                icon={<span>Icon</span>}
+                namespace="finos"
+                id="api-platform"
+                version="1.0.0"
+                breadcrumbs={crumbs}
+                onBreadcrumbClick={onBreadcrumbClick}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: 'api-gateway-pattern' }));
+        expect(onBreadcrumbClick).toHaveBeenCalledWith(crumbs[0], 0);
+    });
+
+    it('collapses to first and last and navigates to the last crumb when clicked with 3+ breadcrumbs', async () => {
+        const user = userEvent.setup();
+        const onBreadcrumbClick = vi.fn();
+        const crumbs: BreadcrumbItem[] = [
+            { namespace: 'finos', type: 'architectures', id: 'root', version: '1.0.0' },
+            { namespace: 'finos', type: 'architectures', id: 'middle', version: '1.0.0' },
+            { namespace: 'finos', type: 'architectures', id: 'parent', version: '1.0.0' },
+        ];
+
+        render(
+            <SectionHeader
+                icon={<span>Icon</span>}
+                namespace="finos"
+                id="current"
+                version="1.0.0"
+                breadcrumbs={crumbs}
+                onBreadcrumbClick={onBreadcrumbClick}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: 'parent' }));
+        expect(onBreadcrumbClick).toHaveBeenCalledWith(crumbs[2], 2);
     });
 });

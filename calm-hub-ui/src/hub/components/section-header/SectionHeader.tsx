@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { IoCopyOutline, IoCheckmarkOutline, IoLinkOutline } from 'react-icons/io5';
-import { isSlug } from '../../../model/calm.js';
+import { BreadcrumbItem, isSlug } from '../../../model/calm.js';
 
 interface SectionHeaderProps {
     icon: ReactNode;
@@ -19,9 +19,12 @@ interface SectionHeaderProps {
     displayName?: string;
     /** Element type label inserted into the trail (e.g. "Architecture"). */
     typeLabel?: string;
+    /** Parent breadcrumbs to render as clickable items before the current trail. */
+    breadcrumbs?: BreadcrumbItem[];
+    onBreadcrumbClick?: (crumb: BreadcrumbItem, index: number) => void;
 }
 
-export function SectionHeader({ icon, namespace, id, version, rightContent, versions, onVersionChange, titleActions, showVersion = true, displayName, typeLabel }: SectionHeaderProps) {
+export function SectionHeader({ icon, namespace, id, version, rightContent, versions, onVersionChange, titleActions, showVersion = true, displayName, typeLabel, breadcrumbs, onBreadcrumbClick }: SectionHeaderProps) {
     const [copied, setCopied] = useState(false);
     const [pinned, setPinned] = useState(false);
     const showShareBar = isSlug(id);
@@ -38,9 +41,49 @@ export function SectionHeader({ icon, namespace, id, version, rightContent, vers
 
     return (
         <div>
-            <div className="bg-base-200 px-6 py-4 flex items-center justify-between border-b border-base-300">
-                <h2 className="text-xl font-semibold flex items-center gap-2 whitespace-nowrap">
+            <div className="bg-base-200 px-6 py-4 flex items-center gap-4 border-b border-base-300">
+                <h2 className="text-xl font-semibold flex items-center gap-2 whitespace-nowrap min-w-0 overflow-hidden flex-1">
                     {icon}
+                    {breadcrumbs && breadcrumbs.length > 0 && (() => {
+                        const first = breadcrumbs[0];
+                        const last = breadcrumbs[breadcrumbs.length - 1];
+                        const lastIndex = breadcrumbs.length - 1;
+                        const hasEllipsis = breadcrumbs.length > 2;
+                        const hiddenLabels = breadcrumbs.slice(1, -1).map(c => c.id).join(' / ');
+                        return (
+                            <>
+                                <button
+                                    onClick={() => onBreadcrumbClick?.(first, 0)}
+                                    className="text-accent hover:underline max-w-[8rem] truncate shrink-0"
+                                    title={first.name || first.id}
+                                >
+                                    {first.name || first.id}
+                                </button>
+                                {' '}
+                                <span className="text-gray-400">/</span>{' '}
+                                {hasEllipsis && (
+                                    <>
+                                        <span className="text-base-content/40 shrink-0" title={hiddenLabels}>…</span>
+                                        {' '}
+                                        <span className="text-gray-400">/</span>{' '}
+                                    </>
+                                )}
+                                {breadcrumbs.length > 1 && (
+                                    <>
+                                        <button
+                                            onClick={() => onBreadcrumbClick?.(last, lastIndex)}
+                                            className="text-accent hover:underline max-w-[8rem] truncate shrink-0"
+                                            title={last.name || last.id}
+                                        >
+                                            {last.name || last.id}
+                                        </button>
+                                        {' '}
+                                        <span className="text-gray-400">/</span>{' '}
+                                    </>
+                                )}
+                            </>
+                        );
+                    })()}
                     {namespace}
                     {typeLabel && (
                         <>
@@ -74,7 +117,7 @@ export function SectionHeader({ icon, namespace, id, version, rightContent, vers
                     )}
                     {titleActions}
                 </h2>
-                {rightContent}
+                {rightContent && <div className="flex-shrink-0">{rightContent}</div>}
             </div>
             {showShareBar && (
                 <div className="bg-base-200 px-6 py-2 flex items-center gap-2 border-b border-base-300" data-testid="share-bar">

@@ -7,6 +7,7 @@ import { MetadataPanel } from '../reactflow/MetadataPanel.js';
 import { toSidebarNodeData, toSidebarEdgeData } from '../reactflow/utils/patternClickHandlers.js';
 import { CalmService } from '../../../service/calm-service.js';
 import type { DrawerProps, Flow, Control, Decorator } from '../../contracts/contracts.js';
+import { DiagramActionsContext } from '../../context/DiagramActionsContext.js';
 
 /**
  * Detect whether JSON data is a CALM pattern (JSON Schema) or an architecture instance.
@@ -26,7 +27,7 @@ function extractId(item: CalmNodeSchema | CalmRelationshipSchema): string {
     return item?.['unique-id'] || '';
 }
 
-export function Drawer({ data, onItemSelect, decorators: decoratorsProp }: DrawerProps) {
+export function Drawer({ data, onItemSelect, decorators: decoratorsProp, onNavigateToDetailedArch }: DrawerProps) {
     const calmService = useMemo(() => new CalmService(), []);
     const [calmInstance, setCALMInstance] = useState<CalmArchitectureSchema | undefined>(undefined);
     const [patternInstance, setPatternInstance] = useState<Record<string, unknown> | undefined>(undefined);
@@ -193,6 +194,7 @@ export function Drawer({ data, onItemSelect, decorators: decoratorsProp }: Drawe
     );
 
     return (
+        <DiagramActionsContext.Provider value={{ onNavigateToDetailedArch }}>
         <div {...getRootProps()} className="flex-1 flex flex-col overflow-hidden h-full">
             {!hasContent && <input {...getInputProps()} />}
             {hasContent ? (
@@ -257,5 +259,6 @@ export function Drawer({ data, onItemSelect, decorators: decoratorsProp }: Drawe
                 </div>
             )}
         </div>
+        </DiagramActionsContext.Provider>
     );
 }

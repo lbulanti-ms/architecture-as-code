@@ -1,0 +1,67 @@
+{
+  "$schema": "https://calm.finos.org/calm/schemas/2025-03/meta/calm.json",
+  "nodes": [
+    {
+      "unique-id": "user-service",
+      "node-type": "service",
+      "name": "User Service",
+      "description": "Handles authentication and user profile management"
+    },
+    {
+      "unique-id": "order-service",
+      "node-type": "service",
+      "name": "Order Service",
+      "description": "Processes and manages customer orders",
+      "details": {
+        "detailed-architecture": "/calm/namespaces/finos/architectures/order-service/versions/1-0-0"
+      }
+    },
+    {
+      "unique-id": "product-service",
+      "node-type": "service",
+      "name": "Product Service",
+      "description": "Manages product catalogue and inventory"
+    },
+    {
+      "unique-id": "message-bus",
+      "node-type": "service",
+      "name": "Message Bus",
+      "description": "Asynchronous event backbone for inter-service communication"
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "order-to-product",
+      "description": "Inventory check",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "order-service" },
+          "destination": { "node": "product-service" }
+        }
+      },
+      "protocol": "HTTP"
+    },
+    {
+      "unique-id": "order-to-bus",
+      "description": "Publish order events",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "order-service" },
+          "destination": { "node": "message-bus" }
+        }
+      },
+      "protocol": "AMQP"
+    },
+    {
+      "unique-id": "user-to-bus",
+      "description": "Publish user events",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "user-service" },
+          "destination": { "node": "message-bus" }
+        }
+      },
+      "protocol": "AMQP"
+    }
+  ]
+}

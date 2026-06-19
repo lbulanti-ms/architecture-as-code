@@ -126,6 +126,14 @@ function extractPatternControls(item: SchemaObject): SchemaObject | undefined {
 
 // ---- Node extraction ----
 
+function extractPatternDetails(item: SchemaObject): { 'detailed-architecture': string } | undefined {
+    const detailsSchema = item['properties']?.['details'];
+    if (!detailsSchema) return undefined;
+    const detailedArch = detailsSchema['properties']?.['detailed-architecture']?.['const'];
+    if (!detailedArch) return undefined;
+    return { 'detailed-architecture': String(detailedArch) };
+}
+
 interface ExtractedNode {
     uniqueId: string;
     name: string;
@@ -133,6 +141,7 @@ interface ExtractedNode {
     description: string;
     interfaces?: SchemaObject[];
     controls?: SchemaObject;
+    details?: { 'detailed-architecture': string };
     decisionGroupId?: string;
 }
 
@@ -146,6 +155,7 @@ function extractNodeFromSchemaItem(item: SchemaObject): ExtractedNode | null {
         description: readSchemaValue(item, 'description') || '',
         interfaces: extractInterfaces(item),
         controls: extractPatternControls(item),
+        details: extractPatternDetails(item),
     };
 }
 
@@ -419,6 +429,7 @@ function createReactFlowNodes(
         };
         if (node.interfaces) data['interfaces'] = node.interfaces;
         if (node.controls) data['controls'] = node.controls;
+        if (node.details) data['details'] = node.details;
         return data;
     }
 

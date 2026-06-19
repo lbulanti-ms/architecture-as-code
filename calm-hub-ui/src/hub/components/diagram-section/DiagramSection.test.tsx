@@ -3,7 +3,7 @@ import { MemoryRouter, useNavigate } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import { DiagramSection } from './DiagramSection.js';
 import { beforeEach, describe, it, expect, vi } from 'vitest';
-import { Data } from '../../../model/calm.js';
+import { BreadcrumbItem, Data } from '../../../model/calm.js';
 
 const calmServiceMock = {
     fetchDeploymentDecoratorsForArchitecture: vi.fn().mockResolvedValue([]),
@@ -302,7 +302,7 @@ describe('DiagramSection', () => {
 
             await user.click(screen.getByText('nav-2.0.0'));
 
-            expect(navigate).toHaveBeenCalledWith('/arch-namespace/architectures/test-arch/2.0.0');
+            expect(navigate).toHaveBeenCalledWith('/arch-namespace/architectures/test-arch/2.0.0', expect.objectContaining({ state: null }));
         });
 
         it('keeps the timeline bar visible across tabs', async () => {
@@ -316,6 +316,45 @@ describe('DiagramSection', () => {
             expect(screen.getByTestId('timeline-bar')).toBeInTheDocument();
             await user.click(screen.getByRole('tab', { name: /json/i }));
             expect(screen.getByTestId('timeline-bar')).toBeInTheDocument();
+        });
+    });
+
+    describe('breadcrumb navigation', () => {
+        it('renders parent breadcrumb in the heading when breadcrumbs prop is provided', () => {
+            const crumbs: BreadcrumbItem[] = [
+                { namespace: 'finos', type: 'patterns', id: 'api-gateway-pattern', version: '1.0.0' },
+            ];
+
+            render(
+                <MemoryRouter>
+                    <DiagramSection data={architectureData} breadcrumbs={crumbs} />
+                </MemoryRouter>
+            );
+
+            const heading = screen.getByRole('heading');
+            expect(heading).toHaveTextContent('api-gateway-pattern');
+        });
+
+        it('navigates to parent when breadcrumb is clicked', async () => {
+            const navigate = vi.fn();
+            vi.mocked(useNavigate).mockReturnValue(navigate);
+            const user = userEvent.setup();
+            const crumbs: BreadcrumbItem[] = [
+                { namespace: 'finos', type: 'patterns', id: 'api-gateway-pattern', version: '1.0.0' },
+            ];
+
+            render(
+                <MemoryRouter>
+                    <DiagramSection data={architectureData} breadcrumbs={crumbs} />
+                </MemoryRouter>
+            );
+
+            await user.click(screen.getByRole('button', { name: 'api-gateway-pattern' }));
+
+            expect(navigate).toHaveBeenCalledWith(
+                '/finos/patterns/api-gateway-pattern/1.0.0',
+                { state: { breadcrumbs: [] } }
+            );
         });
     });
 

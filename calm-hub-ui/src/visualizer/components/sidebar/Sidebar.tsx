@@ -14,7 +14,7 @@ function isCALMRelationship(data: CalmNodeSchema | CalmRelationshipSchema): data
     return 'relationship-type' in data;
 }
 
-export function Sidebar({ selectedData, closeSidebar }: SidebarProps) {
+export function Sidebar({ selectedData, closeSidebar, onNavigateToDetailedArch }: SidebarProps) {
     const [activeTab, setActiveTab] = useState<'details' | 'json'>('details');
     const isNode = isCALMNode(selectedData);
     const isRelationship = isCALMRelationship(selectedData);
@@ -72,7 +72,7 @@ export function Sidebar({ selectedData, closeSidebar }: SidebarProps) {
                         (isNode || isRelationship) ? (
                             <div className="h-full overflow-auto">
                                 {isNode ? (
-                                    <NodeDetails data={selectedData} />
+                                    <NodeDetails data={selectedData} onNavigateToDetailedArch={onNavigateToDetailedArch} />
                                 ) : (
                                     <RelationshipDetails data={selectedData} />
                                 )}

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://calm.finos.org/calm/schemas/2025-03/meta/calm.json",
+  "nodes": [
+    {
+      "unique-id": "order-api",
+      "node-type": "service",
+      "name": "Order API",
+      "description": "REST API layer accepting inbound order requests",
+      "interfaces": [
+        {
+          "unique-id": "order-api-ingress",
+          "host": "order-service.internal",
+          "port": 8080
+        }
+      ]
+    },
+    {
+      "unique-id": "order-processor",
+      "node-type": "service",
+      "name": "Order Processor",
+      "description": "Core business logic for order validation and fulfilment"
+    },
+    {
+      "unique-id": "order-store",
+      "node-type": "database",
+      "name": "Order Store",
+      "description": "Persistent storage for order data and history"
+    },
+    {
+      "unique-id": "payment-client",
+      "node-type": "service",
+      "name": "Payment Client",
+      "description": "Outbound client for initiating payment processing"
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "order-api-to-processor",
+      "description": "Process order request",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "order-api" },
+          "destination": { "node": "order-processor" }
+        }
+      },
+      "protocol": "HTTP"
+    },
+    {
+      "unique-id": "processor-to-store",
+      "description": "Persist order",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "order-processor" },
+          "destination": { "node": "order-store" }
+        }
+      },
+      "protocol": "JDBC"
+    },
+    {
+      "unique-id": "processor-to-payment",
+      "description": "Initiate payment",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "order-processor" },
+          "destination": { "node": "payment-client" }
+        }
+      },
+      "protocol": "HTTPS"
+    }
+  ]
+}

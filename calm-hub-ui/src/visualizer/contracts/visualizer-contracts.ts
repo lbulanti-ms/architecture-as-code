@@ -17,6 +17,7 @@ export interface DrawerProps {
     data?: Data;
     onItemSelect?: (item: SelectedItem) => void;
     decorators?: Decorator[];
+    onNavigateToDetailedArch?: (ref: string) => void;
 }
 
 /**
@@ -32,6 +33,7 @@ export type SelectedItem = {
 export interface SidebarProps {
     selectedData: CalmNodeSchema | CalmRelationshipSchema;
     closeSidebar: () => void;
+    onNavigateToDetailedArch?: (ref: string) => void;
 }
 
 /**

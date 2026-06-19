@@ -14,7 +14,12 @@ const KNOWN_FIELDS = new Set([
     'interfaces', 'controls', 'metadata',
 ]);
 
-export function NodeDetails({ data }: { data: CalmNodeSchema }) {
+interface NodeDetailsProps {
+    data: CalmNodeSchema;
+    onNavigateToDetailedArch?: (ref: string) => void;
+}
+
+export function NodeDetails({ data, onNavigateToDetailedArch }: NodeDetailsProps) {
     const nodeType = extractNodeType(data) || 'Unknown';
     const Icon = getNodeIcon(nodeType);
 
@@ -44,9 +49,30 @@ export function NodeDetails({ data }: { data: CalmNodeSchema }) {
             )}
 
             {detailedArch && (
-                <div className="flex items-center gap-2 text-xs text-accent font-medium bg-accent/10 rounded-lg px-3 py-2">
-                    <ZoomIn className="w-3.5 h-3.5" />
-                    Has detailed architecture
+                <div className="flex items-start gap-2 text-xs text-accent font-medium bg-accent/10 rounded-lg px-3 py-2">
+                    <ZoomIn className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                    <div className="flex flex-col min-w-0">
+                        <span>Detailed Architecture</span>
+                        {detailedArch.startsWith('/calm/') ? (
+                            <button
+                                onClick={() => onNavigateToDetailedArch?.(detailedArch)}
+                                className="font-mono font-normal text-accent underline hover:text-accent/70 truncate text-left"
+                            >
+                                {detailedArch}
+                            </button>
+                        ) : detailedArch.startsWith('http') ? (
+                            <a
+                                href={detailedArch}
+                                className="font-mono font-normal text-accent underline hover:text-accent/70 truncate"
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                {detailedArch}
+                            </a>
+                        ) : (
+                            <span className="font-mono font-normal text-base-content/60 truncate">{detailedArch}</span>
+                        )}
+                    </div>
                 </div>
             )}
 

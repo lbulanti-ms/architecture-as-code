@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { IoConstructOutline, IoGridOutline, IoEyeOutline, IoCodeOutline, IoRocketOutline } from 'react-icons/io5';
-import { Data } from '../../../model/calm.js';
+import { BreadcrumbItem, Data } from '../../../model/calm.js';
 import { sortVersionsDescending } from '../../../model/version.js';
 import { JsonRenderer } from '../json-renderer/JsonRenderer.js';
 import { Drawer } from '../../../visualizer/components/drawer/Drawer.js';
@@ -27,6 +27,9 @@ interface DiagramSectionProps {
     data: Data & { calmType: 'Architectures' | 'Patterns' };
     onItemSelect?: (item: SelectedItem) => void;
     hasDetailsPanel?: boolean;
+    breadcrumbs?: BreadcrumbItem[];
+    onNavigateToDetailedArch?: (ref: string) => void;
+    onDisplayNameChange?: (name: string | undefined) => void;
 }
 
 const iconMap = {
@@ -36,9 +39,10 @@ const iconMap = {
 
 type DiagramTabType = 'diagram' | 'json' | 'deployments';
 
-export function DiagramSection({ data, onItemSelect, hasDetailsPanel }: DiagramSectionProps) {
+export function DiagramSection({ data, onItemSelect, hasDetailsPanel, breadcrumbs, onNavigateToDetailedArch, onDisplayNameChange }: DiagramSectionProps) {
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const tabParam = searchParams.get('tab') as DiagramTabType | null;
     const activeTab: DiagramTabType = tabParam ?? 'diagram';
     const calmService = useMemo(() => new CalmService(), []);
@@ -63,7 +67,7 @@ export function DiagramSection({ data, onItemSelect, hasDetailsPanel }: DiagramS
     const [compareError, setCompareError] = useState<string | null>(null);
 
     const setActiveTab = (tab: DiagramTabType) => {
-        setSearchParams({ tab }, { replace: true });
+        setSearchParams({ tab }, { replace: true, state: location.state });
     };
 
     const isArchitecture = data.calmType === 'Architectures';
@@ -77,10 +81,16 @@ export function DiagramSection({ data, onItemSelect, hasDetailsPanel }: DiagramS
         setCompareFrom(null);
         setCompareTo(null);
         if (version === data.version) return;
-        // Preserve the active tab when switching version.
+        // Preserve the active tab and breadcrumb state when switching version.
         const query = activeTab !== 'diagram' ? `?tab=${activeTab}` : '';
-        navigate(`/${data.name}/${urlType}/${data.id}/${version}${query}`);
+        navigate(`/${data.name}/${urlType}/${data.id}/${version}${query}`, { state: location.state });
     };
+
+    const handleBreadcrumbClick = useCallback((crumb: BreadcrumbItem, index: number) => {
+        navigate(`/${crumb.namespace}/${crumb.type}/${crumb.id}/${crumb.version}`, {
+            state: { breadcrumbs: (breadcrumbs || []).slice(0, index) }
+        });
+    }, [navigate, breadcrumbs]);
 
     const startCompare = (from: string, to: string) => {
         setCompareFrom(from);
@@ -160,9 +170,13 @@ export function DiagramSection({ data, onItemSelect, hasDetailsPanel }: DiagramS
                 if (cancelled) return;
                 const match = list.find((s) => String(s.id) === data.id || s.customId === data.id);
                 setDisplayName(match?.name);
+                onDisplayNameChange?.(match?.name);
             })
             .catch(() => {
-                if (!cancelled) setDisplayName(undefined);
+                if (!cancelled) {
+                    setDisplayName(undefined);
+                    onDisplayNameChange?.(undefined);
+                }
             });
         return () => {
             cancelled = true;
@@ -255,7 +269,7 @@ export function DiagramSection({ data, onItemSelect, hasDetailsPanel }: DiagramS
         const query = activeTab !== 'diagram' ? `?tab=${activeTab}` : '';
         navigate(
             `/${data.name}/${urlType}/${data.id}/${currentMoment.version}${query}`,
-            { replace: true }
+            { replace: true, state: location.state }
         );
     }, [
         isArchitecture,
@@ -269,6 +283,7 @@ export function DiagramSection({ data, onItemSelect, hasDetailsPanel }: DiagramS
         urlType,
         activeTab,
         navigate,
+        location.state,
     ]);
 
     const Icon = iconMap[data.calmType];
@@ -317,6 +332,8 @@ export function DiagramSection({ data, onItemSelect, hasDetailsPanel }: DiagramS
                     displayName={displayName}
                     typeLabel={typeLabel}
                     rightContent={tabs}
+                    breadcrumbs={breadcrumbs}
+                    onBreadcrumbClick={handleBreadcrumbClick}
                 />
 
                 <div className="flex-1 min-h-0 overflow-hidden">
@@ -332,7 +349,7 @@ export function DiagramSection({ data, onItemSelect, hasDetailsPanel }: DiagramS
                         />
                     ) : activeTab === 'diagram' ? (
                         <div className="w-full h-full">
-                            <Drawer data={data} onItemSelect={onItemSelect} decorators={decorators} />
+                            <Drawer data={data} onItemSelect={onItemSelect} decorators={decorators} onNavigateToDetailedArch={onNavigateToDetailedArch} />
                         </div>
                     ) : activeTab === 'deployments' && isArchitecture ? (
                         <div className="h-full bg-base-200 overflow-auto p-4">

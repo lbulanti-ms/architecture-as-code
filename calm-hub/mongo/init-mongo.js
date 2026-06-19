@@ -43,7 +43,7 @@ if (db.counters.countDocuments({ _id: "patternStoreCounter" }) === 0) {
 if (db.counters.countDocuments({ _id: "architectureStoreCounter" }) === 0) {
     db.counters.insertOne({
         _id: "architectureStoreCounter",
-        sequence_value: 2
+        sequence_value: 6
     });
     logSuccess("Initialized architectureStoreCounter with sequence_value 2");
 } else {
@@ -288,11 +288,20 @@ if (db.patterns.countDocuments() === 0) {
                                                             }
                                                         }
                                                     ]
+                                                },
+                                                "details": {
+                                                    "properties": {
+                                                        "detailed-architecture": {
+                                                            "const": "/calm/namespaces/finos/architectures/api-platform/versions/1-0-0"
+                                                        }
+                                                    },
+                                                    "required": ["detailed-architecture"]
                                                 }
                                             },
                                             "required": [
                                                 "well-known-endpoint",
-                                                "interfaces"
+                                                "interfaces",
+                                                "details"
                                             ]
                                         },
                                         {
@@ -1404,20 +1413,335 @@ if (db.architectures.countDocuments() === 0) {
     db.architectures.insertMany([
         {
             namespace: "finos",
-            architectures: [{
-                architectureId: NumberInt(1),
-                name: "Architecture 1",
-                description: "This is a non-compliant arch document. Just creating something to simulate",
-                versions:
+            architectures: [
                 {
-                    "1-0-0": {
-                        "$schema": "https://raw.githubusercontent.com/finos/architecture-as-code/main/calm/draft/2024-04/meta/calm.json",
-                        "$id": "https://raw.githubusercontent.com/finos/architecture-as-code/main/calm/arch-1",
-                        "title": "Architecture 1",
-                        "description": "This is a non-compliant arch document. Just creating something to simulate"
+                    architectureId: NumberInt(1),
+                    name: "Architecture 1",
+                    description: "This is a non-compliant arch document. Just creating something to simulate",
+                    versions:
+                    {
+                        "1-0-0": {
+                            "$schema": "https://raw.githubusercontent.com/finos/architecture-as-code/main/calm/draft/2024-04/meta/calm.json",
+                            "$id": "https://raw.githubusercontent.com/finos/architecture-as-code/main/calm/arch-1",
+                            "title": "Architecture 1",
+                            "description": "This is a non-compliant arch document. Just creating something to simulate"
+                        }
+                    }
+                },
+                {
+                    architectureId: NumberInt(2),
+                    name: "API Platform",
+                    description: "Detailed architecture of the API Gateway node, showing a load-balanced platform with primary and secondary gateway instances",
+                    versions:
+                    {
+                        "1-0-0": {
+                            "$schema": "https://calm.finos.org/calm/schemas/2025-03/meta/calm.json",
+                            "$id": "https://calm.finos.org/calm/namespaces/finos/architectures/2/versions/1.0.0",
+                            "nodes": [
+                                {
+                                    "unique-id": "api-gateway-load-balancer",
+                                    "node-type": "system",
+                                    "name": "API Gateway Load Balancer",
+                                    "description": "Distributes incoming API traffic across gateway instances for high availability",
+                                    "interfaces": [
+                                        {
+                                            "unique-id": "api-gateway-ingress",
+                                            "host": "api-gateway.example.com",
+                                            "port": 443
+                                        }
+                                    ]
+                                },
+                                {
+                                    "unique-id": "primary-api-gateway",
+                                    "node-type": "system",
+                                    "name": "Primary API Gateway",
+                                    "description": "Primary gateway instance responsible for authorization verification and request routing",
+                                    "interfaces": [
+                                        {
+                                            "unique-id": "primary-gateway-ingress",
+                                            "host": "primary-gw.internal",
+                                            "port": 8443
+                                        }
+                                    ]
+                                },
+                                {
+                                    "unique-id": "secondary-api-gateway",
+                                    "node-type": "system",
+                                    "name": "Secondary API Gateway",
+                                    "description": "Secondary gateway instance providing failover and load distribution",
+                                    "interfaces": [
+                                        {
+                                            "unique-id": "secondary-gateway-ingress",
+                                            "host": "secondary-gw.internal",
+                                            "port": 8443
+                                        }
+                                    ]
+                                }
+                            ],
+                            "relationships": [
+                                {
+                                    "unique-id": "lb-to-primary-gateway",
+                                    "description": "Load balancer routes requests to the primary gateway instance",
+                                    "relationship-type": {
+                                        "connects": {
+                                            "source": {
+                                                "node": "api-gateway-load-balancer"
+                                            },
+                                            "destination": {
+                                                "node": "primary-api-gateway",
+                                                "interfaces": ["primary-gateway-ingress"]
+                                            }
+                                        }
+                                    },
+                                    "protocol": "HTTPS"
+                                },
+                                {
+                                    "unique-id": "lb-to-secondary-gateway",
+                                    "description": "Load balancer routes requests to the secondary gateway instance for failover",
+                                    "relationship-type": {
+                                        "connects": {
+                                            "source": {
+                                                "node": "api-gateway-load-balancer"
+                                            },
+                                            "destination": {
+                                                "node": "secondary-api-gateway",
+                                                "interfaces": ["secondary-gateway-ingress"]
+                                            }
+                                        }
+                                    },
+                                    "protocol": "HTTPS"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    architectureId: NumberInt(3),
+                    name: "Microservices Platform",
+                    description: "Top-level microservices platform showing web client, API gateway, backend services and shared data store. The backend-services node drills into a detailed architecture.",
+                    versions: {
+                        "1-0-0": {
+                            "$schema": "https://calm.finos.org/calm/schemas/2025-03/meta/calm.json",
+                            "nodes": [
+                                {
+                                    "unique-id": "web-client",
+                                    "node-type": "webclient",
+                                    "name": "Web Client",
+                                    "description": "Browser-based frontend application"
+                                },
+                                {
+                                    "unique-id": "api-gateway",
+                                    "node-type": "service",
+                                    "name": "API Gateway",
+                                    "description": "Entry point for all client requests, handles routing and authentication"
+                                },
+                                {
+                                    "unique-id": "backend-services",
+                                    "node-type": "service",
+                                    "name": "Backend Services",
+                                    "description": "Collection of microservices handling business logic",
+                                    "details": {
+                                        "detailed-architecture": "/calm/namespaces/finos/architectures/backend-services/versions/1-0-0"
+                                    }
+                                },
+                                {
+                                    "unique-id": "data-store",
+                                    "node-type": "database",
+                                    "name": "Data Store",
+                                    "description": "Shared persistent storage for the platform"
+                                }
+                            ],
+                            "relationships": [
+                                {
+                                    "unique-id": "web-client-to-api-gateway",
+                                    "description": "User requests",
+                                    "relationship-type": {
+                                        "connects": {
+                                            "source": { "node": "web-client" },
+                                            "destination": { "node": "api-gateway" }
+                                        }
+                                    },
+                                    "protocol": "HTTPS"
+                                },
+                                {
+                                    "unique-id": "api-gateway-to-backend",
+                                    "description": "Routed requests",
+                                    "relationship-type": {
+                                        "connects": {
+                                            "source": { "node": "api-gateway" },
+                                            "destination": { "node": "backend-services" }
+                                        }
+                                    },
+                                    "protocol": "HTTPS"
+                                },
+                                {
+                                    "unique-id": "backend-to-data-store",
+                                    "description": "Data persistence",
+                                    "relationship-type": {
+                                        "connects": {
+                                            "source": { "node": "backend-services" },
+                                            "destination": { "node": "data-store" }
+                                        }
+                                    },
+                                    "protocol": "JDBC"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    architectureId: NumberInt(4),
+                    name: "Backend Services",
+                    description: "Internal breakdown of the backend-services node: user, order and product services communicating over a shared message bus. The order-service node drills into a further detailed architecture.",
+                    versions: {
+                        "1-0-0": {
+                            "$schema": "https://calm.finos.org/calm/schemas/2025-03/meta/calm.json",
+                            "nodes": [
+                                {
+                                    "unique-id": "user-service",
+                                    "node-type": "service",
+                                    "name": "User Service",
+                                    "description": "Handles authentication and user profile management"
+                                },
+                                {
+                                    "unique-id": "order-service",
+                                    "node-type": "service",
+                                    "name": "Order Service",
+                                    "description": "Processes and manages customer orders",
+                                    "details": {
+                                        "detailed-architecture": "/calm/namespaces/finos/architectures/order-service/versions/1-0-0"
+                                    }
+                                },
+                                {
+                                    "unique-id": "product-service",
+                                    "node-type": "service",
+                                    "name": "Product Service",
+                                    "description": "Manages product catalogue and inventory"
+                                },
+                                {
+                                    "unique-id": "message-bus",
+                                    "node-type": "service",
+                                    "name": "Message Bus",
+                                    "description": "Asynchronous event backbone for inter-service communication"
+                                }
+                            ],
+                            "relationships": [
+                                {
+                                    "unique-id": "order-to-product",
+                                    "description": "Inventory check",
+                                    "relationship-type": {
+                                        "connects": {
+                                            "source": { "node": "order-service" },
+                                            "destination": { "node": "product-service" }
+                                        }
+                                    },
+                                    "protocol": "HTTP"
+                                },
+                                {
+                                    "unique-id": "order-to-bus",
+                                    "description": "Publish order events",
+                                    "relationship-type": {
+                                        "connects": {
+                                            "source": { "node": "order-service" },
+                                            "destination": { "node": "message-bus" }
+                                        }
+                                    },
+                                    "protocol": "AMQP"
+                                },
+                                {
+                                    "unique-id": "user-to-bus",
+                                    "description": "Publish user events",
+                                    "relationship-type": {
+                                        "connects": {
+                                            "source": { "node": "user-service" },
+                                            "destination": { "node": "message-bus" }
+                                        }
+                                    },
+                                    "protocol": "AMQP"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    architectureId: NumberInt(5),
+                    name: "Order Service",
+                    description: "Internal breakdown of the order-service node: REST API layer, order processor, persistent store and outbound payment client.",
+                    versions: {
+                        "1-0-0": {
+                            "$schema": "https://calm.finos.org/calm/schemas/2025-03/meta/calm.json",
+                            "nodes": [
+                                {
+                                    "unique-id": "order-api",
+                                    "node-type": "service",
+                                    "name": "Order API",
+                                    "description": "REST API layer accepting inbound order requests",
+                                    "interfaces": [
+                                        {
+                                            "unique-id": "order-api-ingress",
+                                            "host": "order-service.internal",
+                                            "port": 8080
+                                        }
+                                    ]
+                                },
+                                {
+                                    "unique-id": "order-processor",
+                                    "node-type": "service",
+                                    "name": "Order Processor",
+                                    "description": "Core business logic for order validation and fulfilment"
+                                },
+                                {
+                                    "unique-id": "order-store",
+                                    "node-type": "database",
+                                    "name": "Order Store",
+                                    "description": "Persistent storage for order data and history"
+                                },
+                                {
+                                    "unique-id": "payment-client",
+                                    "node-type": "service",
+                                    "name": "Payment Client",
+                                    "description": "Outbound client for initiating payment processing"
+                                }
+                            ],
+                            "relationships": [
+                                {
+                                    "unique-id": "order-api-to-processor",
+                                    "description": "Process order request",
+                                    "relationship-type": {
+                                        "connects": {
+                                            "source": { "node": "order-api" },
+                                            "destination": { "node": "order-processor" }
+                                        }
+                                    },
+                                    "protocol": "HTTP"
+                                },
+                                {
+                                    "unique-id": "processor-to-store",
+                                    "description": "Persist order",
+                                    "relationship-type": {
+                                        "connects": {
+                                            "source": { "node": "order-processor" },
+                                            "destination": { "node": "order-store" }
+                                        }
+                                    },
+                                    "protocol": "JDBC"
+                                },
+                                {
+                                    "unique-id": "processor-to-payment",
+                                    "description": "Initiate payment",
+                                    "relationship-type": {
+                                        "connects": {
+                                            "source": { "node": "order-processor" },
+                                            "destination": { "node": "payment-client" }
+                                        }
+                                    },
+                                    "protocol": "HTTPS"
+                                }
+                            ]
+                        }
                     }
                 }
-            }]
+            ]
         },
         {
             namespace: "workshop",
@@ -2959,7 +3283,11 @@ if (db.resource_mappings.countDocuments() === 0) {
         { namespace: "traderx", customId: "traderx", resourceType: "ARCHITECTURE", numericId: NumberInt(1) },
         { namespace: "workshop", customId: "conference-signup-pattern", resourceType: "PATTERN", numericId: NumberInt(1) },
         { namespace: "workshop", customId: "conference-secure-signup-pattern", resourceType: "PATTERN", numericId: NumberInt(2) },
-        { namespace: "workshop", customId: "conference-signup-architecture", resourceType: "ARCHITECTURE", numericId: NumberInt(1) }
+        { namespace: "workshop", customId: "conference-signup-architecture", resourceType: "ARCHITECTURE", numericId: NumberInt(1) },
+        { namespace: "finos", customId: "api-platform", resourceType: "ARCHITECTURE", numericId: NumberInt(2) },
+        { namespace: "finos", customId: "microservices-platform", resourceType: "ARCHITECTURE", numericId: NumberInt(3) },
+        { namespace: "finos", customId: "backend-services", resourceType: "ARCHITECTURE", numericId: NumberInt(4) },
+        { namespace: "finos", customId: "order-service", resourceType: "ARCHITECTURE", numericId: NumberInt(5) }
     ]);
     logSuccess("Initialized resource_mappings with seed data");
 } else {

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://calm.finos.org/calm/schemas/2025-03/meta/calm.json",
+  "nodes": [
+    {
+      "unique-id": "web-client",
+      "node-type": "webclient",
+      "name": "Web Client",
+      "description": "Browser-based frontend application"
+    },
+    {
+      "unique-id": "api-gateway",
+      "node-type": "service",
+      "name": "API Gateway",
+      "description": "Entry point for all client requests, handles routing and authentication"
+    },
+    {
+      "unique-id": "backend-services",
+      "node-type": "service",
+      "name": "Backend Services",
+      "description": "Collection of microservices handling business logic",
+      "details": {
+        "detailed-architecture": "/calm/namespaces/finos/architectures/backend-services/versions/1-0-0"
+      }
+    },
+    {
+      "unique-id": "data-store",
+      "node-type": "database",
+      "name": "Data Store",
+      "description": "Shared persistent storage for the platform"
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "web-client-to-api-gateway",
+      "description": "User requests",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "web-client" },
+          "destination": { "node": "api-gateway" }
+        }
+      },
+      "protocol": "HTTPS"
+    },
+    {
+      "unique-id": "api-gateway-to-backend",
+      "description": "Routed requests",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "api-gateway" },
+          "destination": { "node": "backend-services" }
+        }
+      },
+      "protocol": "HTTPS"
+    },
+    {
+      "unique-id": "backend-to-data-store",
+      "description": "Data persistence",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "backend-services" },
+          "destination": { "node": "data-store" }
+        }
+      },
+      "protocol": "JDBC"
+    }
+  ]
+}

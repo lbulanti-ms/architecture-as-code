@@ -1,0 +1,78 @@
+{
+  "$schema": "https://calm.finos.org/calm/schemas/2025-03/meta/calm.json",
+  "nodes": [
+    {
+      "unique-id": "api-gateway-load-balancer",
+      "node-type": "system",
+      "name": "API Gateway Load Balancer",
+      "description": "Distributes incoming API traffic across gateway instances for high availability",
+      "interfaces": [
+        {
+          "unique-id": "api-gateway-ingress",
+          "host": "api-gateway.example.com",
+          "port": 443
+        }
+      ]
+    },
+    {
+      "unique-id": "primary-api-gateway",
+      "node-type": "system",
+      "name": "Primary API Gateway",
+      "description": "Primary gateway instance responsible for authorization verification and request routing",
+      "interfaces": [
+        {
+          "unique-id": "primary-gateway-ingress",
+          "host": "primary-gw.internal",
+          "port": 8443
+        }
+      ]
+    },
+    {
+      "unique-id": "secondary-api-gateway",
+      "node-type": "system",
+      "name": "Secondary API Gateway",
+      "description": "Secondary gateway instance providing failover and load distribution",
+      "interfaces": [
+        {
+          "unique-id": "secondary-gateway-ingress",
+          "host": "secondary-gw.internal",
+          "port": 8443
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "lb-to-primary-gateway",
+      "description": "Load balancer routes requests to the primary gateway instance",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "api-gateway-load-balancer"
+          },
+          "destination": {
+            "node": "primary-api-gateway",
+            "interfaces": ["primary-gateway-ingress"]
+          }
+        }
+      },
+      "protocol": "HTTPS"
+    },
+    {
+      "unique-id": "lb-to-secondary-gateway",
+      "description": "Load balancer routes requests to the secondary gateway instance for failover",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "api-gateway-load-balancer"
+          },
+          "destination": {
+            "node": "secondary-api-gateway",
+            "interfaces": ["secondary-gateway-ingress"]
+          }
+        }
+      },
+      "protocol": "HTTPS"
+    }
+  ]
+}

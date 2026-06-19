@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { IoChevronForwardOutline } from 'react-icons/io5';
 import { TreeNavigation } from './components/tree-navigation/TreeNavigation.js';
-import { Data, Adr } from '../model/calm.js';
+import { BreadcrumbItem, Data, Adr } from '../model/calm.js';
 import { ControlData } from '../model/control.js';
 import { InterfaceData } from '../model/interface.js';
 import { Navbar } from '../components/navbar/Navbar.js';
@@ -14,7 +15,16 @@ import { Sidebar } from '../visualizer/components/sidebar/Sidebar.js';
 import type { SelectedItem } from '../visualizer/contracts/contracts.js';
 import './Hub.css';
 
+function parseCALMHubPath(ref: string): { namespace: string; type: 'architectures' | 'patterns'; id: string; version: string } | null {
+    const match = ref.match(/^\/calm\/namespaces\/([^/]+)\/(architectures|patterns)\/([^/]+)\/versions\/([^/]+)$/);
+    if (!match) return null;
+    return { namespace: match[1], type: match[2] as 'architectures' | 'patterns', id: match[3], version: match[4] };
+}
+
 export default function Hub() {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const currentDisplayNameRef = useRef<string | undefined>(undefined);
     const [data, setData] = useState<Data | undefined>();
     const [adrData, setAdrData] = useState<Adr | undefined>();
     const [controlData, setControlData] = useState<ControlData | undefined>();
@@ -28,6 +38,7 @@ export default function Hub() {
         setControlData(undefined);
         setInterfaceData(undefined);
         setSelectedItem(null);
+        currentDisplayNameRef.current = undefined;
     }
 
     function handleAdrLoad(adr: Adr) {
@@ -62,6 +73,27 @@ export default function Hub() {
         setSelectedItem(null);
     }, []);
 
+    const handleDisplayNameChange = useCallback((name: string | undefined) => {
+        currentDisplayNameRef.current = name;
+    }, []);
+
+    const handleNavigateToDetailedArch = useCallback((ref: string) => {
+        const parsed = parseCALMHubPath(ref);
+        if (!parsed || !data) return;
+        const currentCrumbs = (location.state as { breadcrumbs?: BreadcrumbItem[] } | null)?.breadcrumbs || [];
+        const currentCrumb: BreadcrumbItem = {
+            namespace: data.name,
+            type: data.calmType === 'Architectures' ? 'architectures' : 'patterns',
+            id: data.id,
+            version: data.version,
+            name: currentDisplayNameRef.current,
+        };
+        navigate(`/${parsed.namespace}/${parsed.type}/${parsed.id}/${parsed.version}`, {
+            state: { breadcrumbs: [...currentCrumbs, currentCrumb] }
+        });
+    }, [navigate, data, location.state]);
+
+    const breadcrumbs = (location.state as { breadcrumbs?: BreadcrumbItem[] } | null)?.breadcrumbs;
     const isDiagramView = data?.calmType === 'Architectures' || data?.calmType === 'Patterns';
 
     const memoizedDataLoad = useMemo(() => handleDataLoad, []);
@@ -98,13 +130,13 @@ export default function Hub() {
                     ) : adrData ? (
                         <AdrRenderer adrDetails={adrData} />
                     ) : isDiagramView ? (
-                        <DiagramSection data={data} onItemSelect={handleItemSelect} hasDetailsPanel={!!selectedItem} />
+                        <DiagramSection data={data} onItemSelect={handleItemSelect} hasDetailsPanel={!!selectedItem} breadcrumbs={breadcrumbs} onNavigateToDetailedArch={handleNavigateToDetailedArch} onDisplayNameChange={handleDisplayNameChange} />
                     ) : (
                         <DocumentDetailSection data={data} />
                     )}
                 </div>
                 {selectedItem && isDiagramView && (
-                    <Sidebar selectedData={selectedItem.data} closeSidebar={closeSidebar} />
+                    <Sidebar selectedData={selectedItem.data} closeSidebar={closeSidebar} onNavigateToDetailedArch={handleNavigateToDetailedArch} />
                 )}
             </div>
         </div>
