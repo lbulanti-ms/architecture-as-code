@@ -21,6 +21,7 @@ const callbacks = {
     onAdrLoad: vi.fn(),
     onControlLoad: vi.fn(),
     onInterfaceLoad: vi.fn(),
+    onLoadError: vi.fn(),
 };
 
 function Harness() {
@@ -73,6 +74,7 @@ describe('useResourceFromRoute', () => {
                 'traderx',
                 'my-arch',
                 expect.anything(),
+                expect.any(Function),
                 expect.any(Function)
             );
         });
@@ -120,5 +122,27 @@ describe('useResourceFromRoute', () => {
                 controlTitle: 'Encryption at rest',
             });
         });
+    });
+});
+
+describe('useResourceFromRoute — load failures', () => {
+    it('reports a failed slug load through onLoadError', async () => {
+        vi.spyOn(loaders, 'loadResourceForId').mockImplementation(
+            (_version, _type, _ns, _id, _svc, _onData, onError) => {
+                onError?.(new Error('404'));
+            }
+        );
+        renderAt('/finos/architectures/model-registry/1.0.0');
+        await waitFor(() => expect(callbacks.onLoadError).toHaveBeenCalled());
+        expect(callbacks.onDataLoad).not.toHaveBeenCalled();
+    });
+
+    it('reports a failed numeric-id load through onLoadError', async () => {
+        vi.spyOn(loaders, 'loadResource').mockImplementation(({ onError }) => {
+            onError?.(new Error('404'));
+        });
+        renderAt('/finos/architectures/42/1.0.0');
+        await waitFor(() => expect(callbacks.onLoadError).toHaveBeenCalled());
+        expect(callbacks.onDataLoad).not.toHaveBeenCalled();
     });
 });

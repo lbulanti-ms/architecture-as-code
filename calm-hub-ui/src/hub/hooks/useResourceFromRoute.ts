@@ -26,6 +26,13 @@ interface UseResourceFromRouteOptions {
     onAdrLoad: (adr: Adr) => void;
     onControlLoad: (control: ControlData) => void;
     onInterfaceLoad: (iface: InterfaceData) => void;
+    /**
+     * Invoked when the routed resource fails to load (e.g. a deep link or a
+     * detailed-architecture reference to a resource that does not exist), so the
+     * page can show a not-found state instead of an empty pane. Never invoked
+     * for a load started for a previous route. Expected stable (memoised).
+     */
+    onLoadError?: (error: unknown) => void;
 }
 
 /**
@@ -44,6 +51,7 @@ export function useResourceFromRoute({
     onAdrLoad,
     onControlLoad,
     onInterfaceLoad,
+    onLoadError,
 }: UseResourceFromRouteOptions) {
     const params = useParams<HubParams>();
 
@@ -61,6 +69,13 @@ export function useResourceFromRoute({
         if (!(params.namespace && params.type && params.id && params.version)) return;
         const uiType = mapTypeInUrlToTypeInUI(params.type);
         const namespace = params.namespace;
+
+        // The loaders have no cancellation, so a rejection can arrive after the
+        // user has already navigated on; only report errors for the current route.
+        let cancelled = false;
+        const reportError = (error: unknown) => {
+            if (!cancelled) onLoadError?.(error);
+        };
 
         if (uiType === 'Interfaces') {
             interfaceService
@@ -102,7 +117,7 @@ export function useResourceFromRoute({
         }
 
         if (isSlug(params.id)) {
-            loadResourceForId(params.version, uiType, namespace, params.id, calmService, onDataLoad);
+            loadResourceForId(params.version, uiType, namespace, params.id, calmService, onDataLoad, reportError);
         } else {
             loadResource({
                 version: params.version,
@@ -113,7 +128,11 @@ export function useResourceFromRoute({
                 onDataLoad,
                 onAdrLoad,
                 adrService,
+                onError: reportError,
             });
         }
-    }, [params, calmService, adrService, interfaceService, controlService, onDataLoad, onAdrLoad]);
+        return () => {
+            cancelled = true;
+        };
+    }, [params, calmService, adrService, interfaceService, controlService, onDataLoad, onAdrLoad, onLoadError]);
 }
