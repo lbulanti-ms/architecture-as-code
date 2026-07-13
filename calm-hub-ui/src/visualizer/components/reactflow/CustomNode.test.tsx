@@ -146,4 +146,30 @@ describe('CustomNode — external URL support', () => {
         expect(screen.queryByText('Explore Architecture')).not.toBeInTheDocument();
         expect(screen.queryByText('Open Architecture')).not.toBeInTheDocument();
     });
+
+    it('suppresses the drill-down indicator for an unresolvable ref (bare filename)', () => {
+        const props = makeNodeProps({ 'detailed-architecture': 'api-platform.json' });
+        renderNode(props);
+
+        // No "Has detailed architecture" badge is advertised when there is no action for it.
+        expect(screen.queryByTitle('Has detailed architecture')).not.toBeInTheDocument();
+    });
+
+    it('surfaces the raw ref (no button) in the hover panel for an unresolvable ref', () => {
+        const props = makeNodeProps({ 'detailed-architecture': 'api-platform.json' });
+        renderNode(props);
+
+        hoverNode();
+        expect(screen.getByText('Detailed Architecture:')).toBeInTheDocument();
+        expect(screen.getByText('api-platform.json')).toBeInTheDocument();
+        expect(screen.queryByText('Explore Architecture')).not.toBeInTheDocument();
+        expect(screen.queryByText('Open Architecture')).not.toBeInTheDocument();
+    });
+
+    it('shows the drill-down indicator for a resolvable internal ref', () => {
+        const props = makeNodeProps({ 'detailed-architecture': '/calm/namespaces/finos/architectures/my-arch/versions/1-0-0' });
+        renderNode(props, vi.fn());
+
+        expect(screen.getByTitle('Has detailed architecture')).toBeInTheDocument();
+    });
 });

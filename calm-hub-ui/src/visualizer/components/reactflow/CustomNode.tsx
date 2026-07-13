@@ -86,6 +86,10 @@ export function CustomNode({ data }: NodeProps) {
   const archResolution = resolveDetailedArchitecture(detailedArchitecture);
   const isSameOriginArch = archResolution.type === 'internal';
   const isExternalArch = archResolution.type === 'external';
+  // A truthy ref that resolves to neither an in-app path nor an openable URL
+  // (e.g. a bare filename). There is no drill-down action for it, so the header
+  // indicator is suppressed and the hover panel surfaces the raw value instead.
+  const isUnknownArch = !!detailedArchitecture && archResolution.type === 'unknown';
   const archPath = archResolution.type === 'internal' ? archResolution.path : undefined;
 
     // Extract AIGF data (if present in node metadata)
@@ -182,7 +186,7 @@ export function CustomNode({ data }: NodeProps) {
         <div style={{ fontWeight: 600, marginBottom: '4px', flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
           <NodeIcon style={{ width: '16px', height: '16px', flexShrink: 0, color: nodeTypeStyle.color }} />
           <span>{data.label}</span>
-          {detailedArchitecture && (
+          {detailedArchitecture && !isUnknownArch && (
             <div title="Has detailed architecture">
               <ZoomIn style={{ width: '20px', height: '20px', flexShrink: 0, color: THEME.colors.accentText }} />
             </div>
@@ -351,6 +355,14 @@ export function CustomNode({ data }: NodeProps) {
             <div style={{ fontSize: '12px', color: THEME.colors.muted, marginBottom: '4px' }}>Description:</div>
             <div style={{ fontSize: '12px', color: THEME.colors.foreground, lineHeight: 1.5 }}>{description}</div>
           </div>
+          {isUnknownArch && (
+            <div style={{ borderTop: `1px solid ${THEME.colors.border}`, paddingTop: '8px', marginTop: '8px' }}>
+              <div style={{ fontSize: '12px', color: THEME.colors.muted, marginBottom: '4px' }}>Detailed Architecture:</div>
+              <div style={{ fontSize: '12px', fontFamily: 'monospace', color: THEME.colors.foreground, wordBreak: 'break-all' }}>
+                {detailedArchitecture}
+              </div>
+            </div>
+          )}
           {(onShowDetails || isExternalArch || (isSameOriginArch && onNavigateToDetailedArch)) && (
             <div style={{ borderTop: `1px solid ${THEME.colors.border}`, paddingTop: '8px', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {onShowDetails && (
