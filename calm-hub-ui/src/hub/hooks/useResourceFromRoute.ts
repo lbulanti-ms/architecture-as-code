@@ -70,17 +70,29 @@ export function useResourceFromRoute({
         const uiType = mapTypeInUrlToTypeInUI(params.type);
         const namespace = params.namespace;
 
-        // The loaders have no cancellation, so a rejection can arrive after the
-        // user has already navigated on; only report errors for the current route.
+        // The loaders have no cancellation, so a promise can settle after the user
+        // has already navigated on. Guard every callback behind `cancelled` (flipped
+        // by the cleanup) so a stale result from a previous route neither renders the
+        // wrong resource nor reports a spurious error.
         let cancelled = false;
+        const cleanup = () => {
+            cancelled = true;
+        };
         const reportError = (error: unknown) => {
             if (!cancelled) onLoadError?.(error);
+        };
+        const emitData = (data: Data) => {
+            if (!cancelled) onDataLoad(data);
+        };
+        const emitAdr = (adr: Adr) => {
+            if (!cancelled) onAdrLoad(adr);
         };
 
         if (uiType === 'Interfaces') {
             interfaceService
                 .fetchInterfacesForNamespace(namespace)
                 .then((interfaces) => {
+                    if (cancelled) return;
                     const match = interfaces.find((i) => i.id === Number(params.id));
                     if (match) {
                         onInterfaceLoadRef.current({
@@ -92,13 +104,14 @@ export function useResourceFromRoute({
                     }
                 })
                 .catch(() => undefined);
-            return;
+            return cleanup;
         }
 
         if (uiType === 'Controls') {
             controlService
                 .fetchControlsForDomain(namespace)
                 .then((controls) => {
+                    if (cancelled) return;
                     // Controls are deep-linked both by numeric id (mobile drill-down) and by
                     // name slug (global/Explorer search -> /controls/<name>/detail), so match either.
                     const match = controls.find((c) => String(c.id) === params.id || c.name === params.id);
@@ -113,11 +126,11 @@ export function useResourceFromRoute({
                     }
                 })
                 .catch(() => undefined);
-            return;
+            return cleanup;
         }
 
         if (isSlug(params.id)) {
-            loadResourceForId(params.version, uiType, namespace, params.id, calmService, onDataLoad, reportError);
+            loadResourceForId(params.version, uiType, namespace, params.id, calmService, emitData, reportError);
         } else {
             loadResource({
                 version: params.version,
@@ -125,14 +138,12 @@ export function useResourceFromRoute({
                 namespace,
                 resourceID: params.id,
                 calmService,
-                onDataLoad,
-                onAdrLoad,
+                onDataLoad: emitData,
+                onAdrLoad: emitAdr,
                 adrService,
                 onError: reportError,
             });
         }
-        return () => {
-            cancelled = true;
-        };
+        return cleanup;
     }, [params, calmService, adrService, interfaceService, controlService, onDataLoad, onAdrLoad, onLoadError]);
 }
