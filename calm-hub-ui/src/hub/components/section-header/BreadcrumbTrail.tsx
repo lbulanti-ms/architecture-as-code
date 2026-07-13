@@ -6,11 +6,22 @@ interface BreadcrumbTrailProps {
     onBreadcrumbClick?: (crumb: BreadcrumbItem, index: number) => void;
 }
 
-function CrumbButton({ crumb, onClick }: { crumb: BreadcrumbItem; onClick: () => void }) {
+function CrumbButton({
+    crumb,
+    onClick,
+    // The immediate parent (last crumb) is the primary "go back" target, so it
+    // gets a wider cap than the first/middle crumbs to avoid collapsing a long
+    // name into a bare, ambiguous ellipsis.
+    maxWidthClass = 'max-w-[8rem]',
+}: {
+    crumb: BreadcrumbItem;
+    onClick: () => void;
+    maxWidthClass?: string;
+}) {
     return (
         <button
             onClick={onClick}
-            className="text-accent hover:underline max-w-[8rem] truncate shrink-0"
+            className={`text-accent hover:underline ${maxWidthClass} truncate shrink-0`}
             title={crumb.name || crumb.id}
         >
             {crumb.name || crumb.id}
@@ -108,7 +119,7 @@ export function BreadcrumbTrail({ breadcrumbs, onBreadcrumbClick }: BreadcrumbTr
             )}
             {breadcrumbs.length > 1 && (
                 <>
-                    <CrumbButton crumb={last} onClick={() => onBreadcrumbClick?.(last, lastIndex)} />
+                    <CrumbButton crumb={last} onClick={() => onBreadcrumbClick?.(last, lastIndex)} maxWidthClass="max-w-[12rem]" />
                     <Separator />
                 </>
             )}

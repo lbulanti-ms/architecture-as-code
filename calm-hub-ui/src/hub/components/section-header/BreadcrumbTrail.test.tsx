@@ -40,4 +40,13 @@ describe('BreadcrumbTrail', () => {
 
         expect(onBreadcrumbClick).toHaveBeenCalledWith(threeCrumbs[1], 1);
     });
+
+    it('gives the immediate-parent (last) crumb a wider truncation cap than the first', () => {
+        render(<BreadcrumbTrail breadcrumbs={threeCrumbs} />);
+
+        // The last crumb is the primary "go back" target, so it is capped wider
+        // (12rem) than the first/middle crumbs (8rem) to stay readable.
+        expect(screen.getByRole('button', { name: 'level-1' })).toHaveClass('max-w-[8rem]');
+        expect(screen.getByRole('button', { name: 'level-3' })).toHaveClass('max-w-[12rem]');
+    });
 });
