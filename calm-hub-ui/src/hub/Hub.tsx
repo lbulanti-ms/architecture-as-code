@@ -372,6 +372,7 @@ export default function Hub() {
             namespace={detailMatch.params.namespace!}
             id={detailMatch.params.id!}
             version={detailMatch.params.version!}
+            type={detailMatch.params.type}
             breadcrumbs={breadcrumbs}
         />
     ) : isDetailRoute || interfaceData || adrData || data ? (

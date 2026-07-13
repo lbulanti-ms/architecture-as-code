@@ -25,12 +25,29 @@ function renderAt(props: Parameters<typeof ResourceNotFound>[0]) {
 
 describe('ResourceNotFound', () => {
     it('echoes the requested resource and always offers the hub root', () => {
-        renderAt({ namespace: 'finos', id: 'model-registry', version: '1.0.0' });
+        renderAt({ namespace: 'finos', id: 'model-registry', version: '1.0.0', type: 'architectures' });
 
         expect(screen.getByText('Architecture not found')).toBeInTheDocument();
         expect(screen.getByText('finos/model-registry@1.0.0')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /browse the hub/i })).toBeInTheDocument();
         expect(screen.queryByRole('button', { name: /back to/i })).not.toBeInTheDocument();
+    });
+
+    it('derives the heading noun from the route type', () => {
+        const { rerender } = renderAt({ namespace: 'finos', id: 'model-registry', version: '1.0.0', type: 'architectures' });
+        expect(screen.getByText('Architecture not found')).toBeInTheDocument();
+
+        rerender(
+            <MemoryRouter>
+                <ResourceNotFound namespace="finos" id="api-gateway" version="1.0.0" type="patterns" />
+            </MemoryRouter>
+        );
+        expect(screen.getByText('Pattern not found')).toBeInTheDocument();
+    });
+
+    it('falls back to a neutral noun for an unknown or absent type', () => {
+        renderAt({ namespace: 'finos', id: 'model-registry', version: '1.0.0' });
+        expect(screen.getByText('Resource not found')).toBeInTheDocument();
     });
 
     it('navigates to the parent crumb with the trail sliced, mirroring a breadcrumb click', async () => {

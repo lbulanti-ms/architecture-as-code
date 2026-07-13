@@ -7,8 +7,25 @@ interface ResourceNotFoundProps {
     namespace: string;
     id: string;
     version: string;
+    /**
+     * The route resource type (`architectures` | `patterns`); drives the heading noun.
+     * Any other/absent value falls back to the neutral "Resource".
+     */
+    type?: string;
     /** Breadcrumb trail from history state; when present the primary action returns to the last crumb. */
     breadcrumbs?: BreadcrumbItem[];
+}
+
+/** Human-readable, singular noun for the not-found heading, derived from the route type. */
+function resourceNoun(type: string | undefined): string {
+    switch (type) {
+        case 'architectures':
+            return 'Architecture';
+        case 'patterns':
+            return 'Pattern';
+        default:
+            return 'Resource';
+    }
 }
 
 /**
@@ -18,7 +35,7 @@ interface ResourceNotFoundProps {
  * user always has a recovery path: back to the parent architecture when a
  * breadcrumb trail exists (in-app navigation), otherwise back to the hub root.
  */
-export function ResourceNotFound({ namespace, id, version, breadcrumbs }: ResourceNotFoundProps) {
+export function ResourceNotFound({ namespace, id, version, type, breadcrumbs }: ResourceNotFoundProps) {
     const navigate = useNavigate();
     const parent = breadcrumbs && breadcrumbs.length > 0 ? breadcrumbs[breadcrumbs.length - 1] : undefined;
 
@@ -35,7 +52,7 @@ export function ResourceNotFound({ namespace, id, version, breadcrumbs }: Resour
         <div className="flex items-center justify-center h-full bg-base-200 p-6">
             <div className="bg-base-100 rounded-box shadow-xl p-8 max-w-md text-center flex flex-col items-center gap-3">
                 <IoAlertCircleOutline size={40} className="text-warning" aria-hidden="true" />
-                <h2 className="text-lg font-semibold">Architecture not found</h2>
+                <h2 className="text-lg font-semibold">{resourceNoun(type)} not found</h2>
                 <p className="text-sm text-base-content/70">
                     <span className="font-mono break-all">
                         {namespace}/{id}@{version}
